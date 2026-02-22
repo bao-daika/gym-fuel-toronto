@@ -15,8 +15,8 @@
         .glass { background: rgba(17, 24, 39, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(75, 85, 99, 0.3); }
         .active-cat { background: #2563eb !important; border-color: #3b82f6 !important; color: white !important; }
         .custom-marker { background: transparent !important; border: none !important; }
-        .user-dot { width: 15px; height: 15px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.2); opacity: 0.3; } 100% { transform: scale(0.9); opacity: 1; } }
+        .user-dot { width: 15px; height: 15px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px #3b82f6; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.3); opacity: 0.3; } 100% { transform: scale(0.9); opacity: 1; } }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 5px; color: black; }
     </style>
@@ -35,7 +35,13 @@
 
         <div id="sidebar" class="hidden absolute top-20 left-4 z-[1000] w-72 glass rounded-3xl p-5 shadow-2xl">
             <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 ml-1">Categories</h2>
-            <div id="category-list" class="space-y-2"></div>
+            <div id="category-list" class="space-y-2 mb-6"></div>
+            
+            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 ml-1">Special Plans</h2>
+            <button onclick="showDietPlan()" class="w-full flex items-center gap-4 p-3 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 transition">
+                <div class="p-2 rounded-lg bg-yellow-500 text-black"><i data-lucide="apple" class="w-5 h-5"></i></div>
+                <div class="text-left"><div class="text-sm font-bold text-white">Free Diet Plan</div><div class="text-[10px] text-yellow-500">Optimized for Toronto</div></div>
+            </button>
         </div>
 
         <div id="detail-view" class="hidden absolute inset-0 z-[2000] bg-[#0b0f1a] overflow-y-auto p-6 text-white">
@@ -53,19 +59,14 @@
     </div>
 
     <script>
-        // ==========================================================================================
-        // DATA CENTER: THÊM DỮ LIỆU TẠI ĐÂY (TRẢI HÀNG NGANG CHO GỌN)
-        // ==========================================================================================
+        // ==========================================
+        // DATA CENTER
+        // ==========================================
         const stores = [
-            // --- PROTEIN GOOD FOOD ---
             { id: "a1", store: "FreshCo", address: "410 Bathurst St, Toronto, ON M5T 2S6", category: "Protein Good Food", sub_type: "Supermarket", lat: 43.6541, lng: -79.4068, items: [{ name: "Chicken Breast (1kg)", price: 12.0, protein: 30 }] },
             { id: "a2", store: "House Of Gourmet", address: "484 Dundas St W, Toronto, ON M5T 1G9", category: "Protein Good Food", sub_type: "Restaurant", lat: 43.65324, lng: -79.39721, items: [{ name: "BBQ Pork (1lb)", price: 15.99, protein: 50 }] },
             { id: "a3", store: "Juicy Dumpling", address: "280 Spadina Ave., Toronto, ON M5T 0A1", category: "Protein Good Food", sub_type: "Restaurant", lat: 43.65258, lng: -79.39871, items: [{ name: "Steamed Chicken Dumplings", price: 3.99, protein: 12 }] },
-
-            // --- GYMS & MARTIAL ARTS ---
             { id: "b1", store: "Hone Fitness", address: "196 Spadina Ave., Toronto, ON M5T 2C2", category: "Gyms & Martial Arts", sub_type: "Gym", lat: 43.6501, lng: -79.3974, items: [{ name: "Monthly Membership", price: 49.99, protein: 0 }] },
-            
-            // --- SUPPLEMENTS STORE ---
             { id: "c1", store: "Popeye's Supplements", address: "351 Spadina Ave., Toronto, ON M5T 2G3", category: "Supplements Store", sub_type: "Supplements", lat: 43.6506, lng: -79.3784, items: [{ name: "Whey Protein 2lb", price: 89.99, protein: 25 }] }
         ];
 
@@ -76,33 +77,54 @@
             { label: "Fitness Hangout", icon: "tree-pine", desc: "Parks & run clubs" }
         ];
 
+        const dietPlans = [
+            { goal: "Muscle Gain", cal: "2500 kcal", menu: ["Sáng: 3 trứng + bánh mì đen", "Trưa: 200g ức gà (Mua tại FreshCo)", "Tối: 200g Bò + Khoai tây"] },
+            { goal: "Fat Loss", cal: "1800 kcal", menu: ["Sáng: Sữa yogurt Hy Lạp", "Trưa: Salad gà (Juicy Dumpling)", "Tối: Cá hấp + Bông cải xanh"] }
+        ];
+
         const markerColors = { Supermarket: "#16a34a", Restaurant: "#ea580c", Gym: "#2563eb", Supplements: "#dc2626" };
 
         // ==========================================
         // LOGIC APP
         // ==========================================
-        const map = L.map('map', { zoomControl: false, minZoom: 14 }).setView([43.6532, -79.3932], 15);
+        const map = L.map('map', { zoomControl: false, minZoom: 12 }).setView([43.6532, -79.3932], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
         let markerGroup = L.layerGroup().addTo(map);
+        let userMarker = null; 
         let activeCategory = "Protein Good Food";
+        let userLatLng = null;
+
+        function getDist(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2-lat1) * Math.PI/180;
+            const dLon = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return d > 1 ? d.toFixed(1)+'km' : Math.round(d*1000)+'m';
+        }
 
         function renderMarkers() {
             markerGroup.clearLayers();
             stores.filter(s => s.category === activeCategory).forEach(store => {
                 const color = markerColors[store.sub_type] || "#64748b";
+                const distTxt = userLatLng ? `<div class="text-[10px] text-blue-500 font-bold mt-1">${getDist(userLatLng.lat, userLatLng.lng, store.lat, store.lng)} away</div>` : '';
+                
                 const icon = L.divIcon({
                     className: "custom-marker",
                     html: `<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px ${color}88"><div style="width:8px;height:8px;border-radius:50%;background:white;transform:rotate(45deg)"></div></div>`,
                     iconSize: [24, 24], iconAnchor: [12, 24]
                 });
+                
                 L.marker([store.lat, store.lng], { icon }).addTo(markerGroup)
-                 .bindPopup(`<div class="p-1"><div class="font-bold text-sm mb-1">${store.store}</div><button onclick="showDetail('${store.id}')" class="w-full bg-blue-600 text-white py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase active:scale-95 transition">Details</button></div>`);
+                 .bindPopup(`<div class="p-1 text-center"><div class="font-bold text-sm">${store.store}</div>${distTxt}<button onclick="showDetail('${store.id}')" class="w-full mt-2 bg-blue-600 text-white py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase active:scale-95 transition">Details</button></div>`);
             });
         }
 
         window.showDetail = function(id) {
             const store = stores.find(s => s.id === id);
             if (!store) return;
+            document.getElementById('directions-btn').classList.remove('hidden');
             document.getElementById('detail-title').innerText = store.store;
             document.getElementById('detail-address').innerText = store.address;
             document.getElementById('detail-subtype').innerText = store.sub_type;
@@ -113,14 +135,27 @@
                 </div>`).join('');
             
             document.getElementById('directions-btn').onclick = () => {
-                const dest = encodeURIComponent(`${store.store}, ${store.address}`);
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, "_blank");
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`, "_blank");
             };
             document.getElementById('detail-view').classList.remove('hidden');
             lucide.createIcons();
         };
 
-        function renderSidebar() {
+        window.showDietPlan = function() {
+            document.getElementById('directions-btn').classList.add('hidden');
+            document.getElementById('detail-title').innerText = "Free Diet Plans";
+            document.getElementById('detail-address').innerText = "Personalized for Toronto Gymers";
+            document.getElementById('detail-subtype').innerText = "Nutrition";
+            document.getElementById('detail-items').innerHTML = dietPlans.map(p => `
+                <div class="p-4 glass rounded-2xl border border-yellow-500/20 mb-3">
+                    <div class="flex justify-between items-center mb-2"><span class="text-yellow-500 font-bold text-sm uppercase">${p.goal}</span><span class="text-[10px] text-gray-500">${p.cal}</span></div>
+                    <ul class="text-xs text-gray-300 space-y-2">${p.menu.map(m => `<li>• ${m}</li>`).join('')}</ul>
+                </div>`).join('');
+            document.getElementById('detail-view').classList.remove('hidden');
+            toggleMenu(); lucide.createIcons();
+        };
+
+        window.renderSidebar = function() {
             const list = document.getElementById('category-list');
             list.innerHTML = categories.map(cat => `
                 <button onclick="selectCategory('${cat.label}')" class="w-full flex items-center gap-4 p-3 rounded-2xl text-gray-400 hover:bg-gray-800/50 border border-transparent ${activeCategory === cat.label ? 'active-cat' : ''}">
@@ -139,8 +174,28 @@
 
         window.toggleMenu = () => document.getElementById('sidebar').classList.toggle('hidden');
         window.closeDetail = () => document.getElementById('detail-view').classList.add('hidden');
-        window.locateUser = () => map.locate({setView: true, maxZoom: 16});
-        map.on('locationfound', (e) => L.marker(e.latlng, { icon: L.divIcon({ className: "custom-marker", html: `<div class="user-dot"></div>` }) }).addTo(map));
+
+        // CHẾ ĐỘ WATCH MODE: TỰ ĐỘNG CHẠY THEO USER
+        window.locateUser = () => {
+            map.locate({
+                setView: true, 
+                maxZoom: 16, 
+                watch: true, 
+                enableHighAccuracy: true
+            });
+        };
+        
+        map.on('locationfound', (e) => {
+            userLatLng = e.latlng;
+            if (userMarker) map.removeLayer(userMarker);
+            userMarker = L.marker(e.latlng, { 
+                icon: L.divIcon({ 
+                    className: "custom-marker", 
+                    html: `<div class="user-dot"></div>` 
+                }) 
+            }).addTo(map);
+            renderMarkers(); 
+        });
 
         renderMarkers(); renderSidebar(); lucide.createIcons();
     </script>
