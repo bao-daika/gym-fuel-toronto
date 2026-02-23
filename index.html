@@ -2,32 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym Fuel Toronto</title>
-    <link rel="icon" type="image/png" href="GymFuelTorontoPhoenix.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gym Fuel Toronto | Mentor Version</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body, html { height: 100%; margin: 0; background: #0b0f1a; font-family: sans-serif; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; z-index: 1; background: #0b0f1a; }
+        #map { height: 100vh; width: 100vw; z-index: 1; }
         .glass { background: rgba(17, 24, 39, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(75, 85, 99, 0.3); }
         .active-cat { background: #2563eb !important; border-color: #3b82f6 !important; color: white !important; }
         .custom-marker { background: transparent !important; border: none !important; }
         .user-dot { width: 15px; height: 15px; background: #3b82f6; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 15px #3b82f6; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.3); opacity: 0.3; } 100% { transform: scale(0.9); opacity: 1; } }
         .leaflet-control-attribution { display: none !important; }
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 5px; color: black; }
+        
+        /* Hotspot Animation */
+        .hotspot { position: absolute; border: 2px dashed rgba(59, 130, 246, 0.6); background: rgba(59, 130, 246, 0.1); border-radius: 4px; cursor: pointer; transition: all 0.2s; z-index: 10; }
+        .hotspot:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.3); }
+        .hotspot:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.2); }
+
+        /* Item Info Card on Flyer */
+        #item-info-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(20px); opacity: 0; pointer-events: none; }
+        #item-info-card.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body>
 
     <div class="relative h-full w-full">
         <div class="absolute top-0 left-0 right-0 z-[1000] p-4 flex justify-between items-center pointer-events-none">
-            <button onclick="toggleMenu()" class="p-3 glass rounded-xl text-white pointer-events-auto active:scale-95 transition shadow-lg border border-blue-500/20"><i data-lucide="menu"></i></button>
-            <div id="current-header" class="flex items-center gap-2 px-4 py-2 rounded-full glass text-sm font-bold pointer-events-auto text-white border border-blue-500/30">
-                <i data-lucide="utensils" class="w-4 h-4 text-blue-400" id="header-icon"></i>
+            <button onclick="toggleMenu()" class="p-3 glass rounded-xl text-white pointer-events-auto active:scale-95 transition shadow-lg"><i data-lucide="menu"></i></button>
+            <div class="flex items-center gap-2 px-4 py-2 rounded-full glass text-sm font-bold pointer-events-auto text-white border border-blue-500/30">
+                <i data-lucide="utensils" class="w-4 h-4 text-blue-400"></i>
                 <span id="header-text">Protein Good Food</span>
             </div>
             <button onclick="locateUser()" class="p-3 glass rounded-xl text-blue-400 pointer-events-auto active:scale-95 transition border border-blue-500/20"><i data-lucide="crosshair"></i></button>
@@ -36,168 +43,148 @@
         <div id="sidebar" class="hidden absolute top-20 left-4 z-[1000] w-72 glass rounded-3xl p-5 shadow-2xl">
             <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 ml-1">Categories</h2>
             <div id="category-list" class="space-y-2 mb-6"></div>
-            
             <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 ml-1">Special Plans</h2>
-            <button onclick="showDietPlan()" class="w-full flex items-center gap-4 p-3 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 transition">
+            <button onclick="alert('Diet plans coming soon for Bảo Lười!')" class="w-full flex items-center gap-4 p-3 rounded-2xl bg-yellow-500/10 border border-yellow-500/30">
                 <div class="p-2 rounded-lg bg-yellow-500 text-black"><i data-lucide="apple" class="w-5 h-5"></i></div>
-                <div class="text-left"><div class="text-sm font-bold text-white">Free Diet Plan</div><div class="text-[10px] text-yellow-500">Optimized for Toronto</div></div>
+                <div class="text-left"><div class="text-sm font-bold text-white">Free Diet Plan</div></div>
             </button>
         </div>
 
-        <div id="detail-view" class="hidden absolute inset-0 z-[2000] bg-[#0b0f1a] overflow-y-auto p-6 text-white">
-            <div class="flex justify-between items-start mb-6">
-                <button onclick="closeDetail()" class="flex items-center gap-2 text-sm text-blue-400 font-medium"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
-                <button id="directions-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 shadow-lg active:scale-95 transition border border-blue-400/50"><i data-lucide="navigation" class="w-3 h-3"></i> Directions</button>
+        <div id="detail-view" class="hidden absolute inset-0 z-[2000] bg-[#0b0f1a] overflow-y-auto p-4 text-white">
+            <div class="flex justify-between items-center mb-4 sticky top-0 z-[2001] bg-[#0b0f1a]/80 backdrop-blur-md py-2">
+                <button onclick="closeDetail()" class="flex items-center gap-2 text-sm text-blue-400 font-medium p-2"><i data-lucide="arrow-left" class="w-5 h-5"></i> Back</button>
+                <button id="directions-btn" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg active:scale-95 transition"><i data-lucide="navigation" class="w-3 h-3"></i> Directions</button>
             </div>
-            <h1 id="detail-title" class="text-3xl font-bold mb-1 font-mono uppercase tracking-tighter"></h1>
-            <div id="detail-address" class="text-xs text-gray-400 mb-4 italic"></div>
-            <div id="detail-subtype" class="inline-block px-2 py-1 rounded bg-blue-900/40 text-blue-400 text-[10px] font-bold uppercase mb-6 border border-blue-800/30"></div>
-            <div id="detail-items" class="space-y-3"></div>
+            
+            <div class="mb-4">
+                <h1 id="detail-title" class="text-2xl font-bold font-mono uppercase tracking-tighter"></h1>
+                <div id="detail-address" class="text-[10px] text-gray-400 italic"></div>
+            </div>
+
+            <div class="relative w-full rounded-2xl border border-gray-800 bg-black overflow-hidden shadow-2xl mb-24">
+                <img id="main-flyer-img" src="" class="w-full h-auto block select-none">
+                <div id="flyer-hotspots" class="absolute inset-0"></div>
+            </div>
+
+            <div id="item-info-card" class="fixed bottom-6 left-4 right-4 z-[2002] glass rounded-2xl p-4 border-l-4 border-l-blue-500 shadow-2xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 id="item-name" class="text-lg font-bold text-white">Select an item</h3>
+                        <p id="item-price" class="text-blue-400 font-mono text-xl font-bold"></p>
+                    </div>
+                    <div class="bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/40">
+                        <span id="item-protein" class="text-blue-400 text-xs font-bold"></span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-widest">💪 Perfect for your protein goal</p>
+            </div>
         </div>
 
         <div id="map"></div>
     </div>
 
+    <script src="data.js"></script>
     <script>
-        // ==========================================
-        // DATA CENTER
-        // ==========================================
-        const stores = [
-            { id: "a1", store: "FreshCo", address: "410 Bathurst St, Toronto, ON M5T 2S6", category: "Protein Good Food", sub_type: "Supermarket", lat: 43.6541, lng: -79.4068, items: [{ name: "Chicken Breast (1kg)", price: 12.0, protein: 30 }] },
-            { id: "a2", store: "House Of Gourmet", address: "484 Dundas St W, Toronto, ON M5T 1G9", category: "Protein Good Food", sub_type: "Restaurant", lat: 43.65324, lng: -79.39721, items: [{ name: "BBQ Pork (1lb)", price: 15.99, protein: 50 }] },
-            { id: "a3", store: "Juicy Dumpling", address: "280 Spadina Ave., Toronto, ON M5T 0A1", category: "Protein Good Food", sub_type: "Restaurant", lat: 43.65258, lng: -79.39871, items: [{ name: "Steamed Chicken Dumplings", price: 3.99, protein: 12 }] },
-            { id: "b1", store: "Hone Fitness", address: "196 Spadina Ave., Toronto, ON M5T 2C2", category: "Gyms & Martial Arts", sub_type: "Gym", lat: 43.6501, lng: -79.3974, items: [{ name: "Monthly Membership", price: 49.99, protein: 0 }] },
-            { id: "c1", store: "Popeye's Supplements", address: "351 Spadina Ave., Toronto, ON M5T 2G3", category: "Supplements Store", sub_type: "Supplements", lat: 43.6506, lng: -79.3784, items: [{ name: "Whey Protein 2lb", price: 89.99, protein: 25 }] }
-        ];
-
-        const categories = [
-            { label: "Protein Good Food", icon: "utensils", desc: "High protein under $15" },
-            { label: "Gyms & Martial Arts", icon: "dumbbell", desc: "Gyms & MMA studios" },
-            { label: "Supplements Store", icon: "pill", desc: "Protein & shops" },
-            { label: "Fitness Hangout", icon: "tree-pine", desc: "Parks & run clubs" }
-        ];
-
-        const dietPlans = [
-            { goal: "Muscle Gain", cal: "2500 kcal", menu: ["Sáng: 3 trứng + bánh mì đen", "Trưa: 200g ức gà (Mua tại FreshCo)", "Tối: 200g Bò + Khoai tây"] },
-            { goal: "Fat Loss", cal: "1800 kcal", menu: ["Sáng: Sữa yogurt Hy Lạp", "Trưa: Salad gà (Juicy Dumpling)", "Tối: Cá hấp + Bông cải xanh"] }
-        ];
-
-        const markerColors = { Supermarket: "#16a34a", Restaurant: "#ea580c", Gym: "#2563eb", Supplements: "#dc2626" };
-
-        // ==========================================
-        // LOGIC APP
-        // ==========================================
+        // Init Map
         const map = L.map('map', { zoomControl: false, minZoom: 12 }).setView([43.6532, -79.3932], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        
         let markerGroup = L.layerGroup().addTo(map);
-        let userMarker = null; 
         let activeCategory = "Protein Good Food";
-        let userLatLng = null;
+        let userMarker = null;
 
-        function getDist(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2-lat1) * Math.PI/180;
-            const dLon = (lon2-lon1) * Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return d > 1 ? d.toFixed(1)+'km' : Math.round(d*1000)+'m';
-        }
-
+        // Render Markers
         function renderMarkers() {
             markerGroup.clearLayers();
             stores.filter(s => s.category === activeCategory).forEach(store => {
                 const color = markerColors[store.sub_type] || "#64748b";
-                const distTxt = userLatLng ? `<div class="text-[10px] text-blue-500 font-bold mt-1">${getDist(userLatLng.lat, userLatLng.lng, store.lat, store.lng)} away</div>` : '';
-                
                 const icon = L.divIcon({
                     className: "custom-marker",
-                    html: `<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px ${color}88"><div style="width:8px;height:8px;border-radius:50%;background:white;transform:rotate(45deg)"></div></div>`,
+                    html: `<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow: 0 0 10px ${color}66;"><div style="width:8px;height:8px;border-radius:50%;background:white;transform:rotate(45deg)"></div></div>`,
                     iconSize: [24, 24], iconAnchor: [12, 24]
                 });
                 
                 L.marker([store.lat, store.lng], { icon }).addTo(markerGroup)
-                 .bindPopup(`<div class="p-1 text-center"><div class="font-bold text-sm">${store.store}</div>${distTxt}<button onclick="showDetail('${store.id}')" class="w-full mt-2 bg-blue-600 text-white py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase active:scale-95 transition">Details</button></div>`);
+                 .on('click', () => showDetail(store.id));
             });
         }
 
+        // Show Detail & Flyer
         window.showDetail = function(id) {
             const store = stores.find(s => s.id === id);
             if (!store) return;
-            document.getElementById('directions-btn').classList.remove('hidden');
+            
             document.getElementById('detail-title').innerText = store.store;
             document.getElementById('detail-address').innerText = store.address;
-            document.getElementById('detail-subtype').innerText = store.sub_type;
-            document.getElementById('detail-items').innerHTML = store.items.map(item => `
-                <div class="flex justify-between items-center p-4 glass rounded-2xl border border-gray-800">
-                    <div><div class="text-sm font-semibold text-white">${item.name}</div><div class="text-[10px] text-green-400 font-bold uppercase">${item.protein}g protein</div></div>
-                    <div class="text-lg font-bold text-blue-400">$${item.price.toFixed(2)}</div>
-                </div>`).join('');
+            document.getElementById('main-flyer-img').src = store.flyer_img;
             
+            // Render Hotspots
+            const hotspotContainer = document.getElementById('flyer-hotspots');
+            hotspotContainer.innerHTML = store.items.map((item, index) => `
+                <div onclick="showItemInfo('${item.name}', '${item.price}', '${item.protein}')" 
+                     class="hotspot" 
+                     style="left: ${item.x}%; top: ${item.y}%; width: ${item.w}%; height: ${item.h}%; transform: translate(-50%, -50%);">
+                </div>
+            `).join('');
+
             document.getElementById('directions-btn').onclick = () => {
                 window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`, "_blank");
             };
+            
             document.getElementById('detail-view').classList.remove('hidden');
+            document.getElementById('item-info-card').classList.remove('active'); // Reset card
             lucide.createIcons();
         };
 
-        window.showDietPlan = function() {
-            document.getElementById('directions-btn').classList.add('hidden');
-            document.getElementById('detail-title').innerText = "Free Diet Plans";
-            document.getElementById('detail-address').innerText = "Personalized for Toronto Gymers";
-            document.getElementById('detail-subtype').innerText = "Nutrition";
-            document.getElementById('detail-items').innerHTML = dietPlans.map(p => `
-                <div class="p-4 glass rounded-2xl border border-yellow-500/20 mb-3">
-                    <div class="flex justify-between items-center mb-2"><span class="text-yellow-500 font-bold text-sm uppercase">${p.goal}</span><span class="text-[10px] text-gray-500">${p.cal}</span></div>
-                    <ul class="text-xs text-gray-300 space-y-2">${p.menu.map(m => `<li>• ${m}</li>`).join('')}</ul>
-                </div>`).join('');
-            document.getElementById('detail-view').classList.remove('hidden');
-            toggleMenu(); lucide.createIcons();
+        // Show Mini Card for Item
+        window.showItemInfo = function(name, price, protein) {
+            document.getElementById('item-name').innerText = name;
+            document.getElementById('item-price').innerText = `$${price}`;
+            document.getElementById('item-protein').innerText = `${protein}g Protein`;
+            document.getElementById('item-info-card').classList.add('active');
+            
+            // Tự động ẩn sau 5 giây nếu user không chạm
+            setTimeout(() => {
+                // document.getElementById('item-info-card').classList.remove('active');
+            }, 5000);
+        };
+
+        window.toggleMenu = () => document.getElementById('sidebar').classList.toggle('hidden');
+        window.closeDetail = () => {
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('item-info-card').classList.remove('active');
         };
 
         window.renderSidebar = function() {
             const list = document.getElementById('category-list');
             list.innerHTML = categories.map(cat => `
-                <button onclick="selectCategory('${cat.label}')" class="w-full flex items-center gap-4 p-3 rounded-2xl text-gray-400 hover:bg-gray-800/50 border border-transparent ${activeCategory === cat.label ? 'active-cat' : ''}">
-                    <div class="p-2 rounded-lg bg-gray-800"><i data-lucide="${cat.icon}" class="w-5 h-5"></i></div>
-                    <div class="text-left flex-1"><div class="text-sm font-bold text-white">${cat.label}</div><div class="text-[10px] text-gray-500">${cat.desc}</div></div>
+                <button onclick="selectCategory('${cat.label}')" class="w-full flex items-center gap-4 p-3 rounded-2xl transition ${activeCategory === cat.label ? 'active-cat' : 'text-gray-400'}">
+                    <div class="p-2 rounded-lg ${activeCategory === cat.label ? 'bg-white/20' : 'bg-gray-800'}"><i data-lucide="${cat.icon}" class="w-5 h-5"></i></div>
+                    <div class="text-left flex-1 font-bold text-sm">${cat.label}</div>
                 </button>`).join('');
             lucide.createIcons();
         }
 
-        window.selectCategory = (label) => {
-            activeCategory = label;
-            document.getElementById('header-text').innerText = label;
-            document.getElementById('header-icon').setAttribute('data-lucide', categories.find(c => c.label === label).icon);
-            renderMarkers(); renderSidebar(); toggleMenu(); lucide.createIcons();
+        window.selectCategory = (l) => { 
+            activeCategory = l; 
+            document.getElementById('header-text').innerText = l;
+            renderMarkers(); 
+            renderSidebar(); 
+            toggleMenu(); 
         };
-
-        window.toggleMenu = () => document.getElementById('sidebar').classList.toggle('hidden');
-        window.closeDetail = () => document.getElementById('detail-view').classList.add('hidden');
-
-        // CHẾ ĐỘ WATCH MODE: TỰ ĐỘNG CHẠY THEO USER
+        
         window.locateUser = () => {
-            map.locate({
-                setView: true, 
-                maxZoom: 16, 
-                watch: true, 
-                enableHighAccuracy: true
-            });
+            map.locate({ setView: true, maxZoom: 16 });
         };
         
         map.on('locationfound', (e) => {
-            userLatLng = e.latlng;
             if (userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(e.latlng, { 
-                icon: L.divIcon({ 
-                    className: "custom-marker", 
-                    html: `<div class="user-dot"></div>` 
-                }) 
-            }).addTo(map);
-            renderMarkers(); 
+            userMarker = L.marker(e.latlng, { icon: L.divIcon({ className: "custom-marker", html: `<div class="user-dot"></div>` }) }).addTo(map);
         });
 
-        renderMarkers(); renderSidebar(); lucide.createIcons();
+        // Start App
+        renderMarkers(); 
+        renderSidebar(); 
+        lucide.createIcons();
     </script>
 </body>
 </html>
