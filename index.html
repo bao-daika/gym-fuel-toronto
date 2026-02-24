@@ -91,6 +91,7 @@
         let markerGroup = L.layerGroup().addTo(map);
         let activeCategory = "Protein Good Food";
         let userMarker = null;
+        let watchId = null; // Cất ID để quản lý tracking
 
         // Render Markers
         function renderMarkers() {
@@ -117,7 +118,6 @@
             document.getElementById('detail-address').innerText = store.address;
             document.getElementById('main-flyer-img').src = store.flyer_img;
             
-            // Render Hotspots
             const hotspotContainer = document.getElementById('flyer-hotspots');
             hotspotContainer.innerHTML = store.items.map((item, index) => `
                 <div onclick="showItemInfo('${item.name}', '${item.price}', '${item.protein}')" 
@@ -131,21 +131,15 @@
             };
             
             document.getElementById('detail-view').classList.remove('hidden');
-            document.getElementById('item-info-card').classList.remove('active'); // Reset card
+            document.getElementById('item-info-card').classList.remove('active'); 
             lucide.createIcons();
         };
 
-        // Show Mini Card for Item
         window.showItemInfo = function(name, price, protein) {
             document.getElementById('item-name').innerText = name;
             document.getElementById('item-price').innerText = `$${price}`;
             document.getElementById('item-protein').innerText = `${protein}g Protein`;
             document.getElementById('item-info-card').classList.add('active');
-            
-            // Tự động ẩn sau 5 giây nếu user không chạm
-            setTimeout(() => {
-                // document.getElementById('item-info-card').classList.remove('active');
-            }, 5000);
         };
 
         window.toggleMenu = () => document.getElementById('sidebar').classList.toggle('hidden');
@@ -172,14 +166,42 @@
             toggleMenu(); 
         };
         
+        // --- FIXED: LIVE TRACKING SYSTEM ---
         window.locateUser = () => {
-            map.locate({ setView: true, maxZoom: 16 });
+            if ("geolocation" in navigator) {
+                // 1. Bay tới vị trí hiện tại ngay lập tức
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const latlng = [position.coords.latitude, position.coords.longitude];
+                    map.setView(latlng, 16);
+                });
+
+                // 2. Bắt đầu theo dõi di chuyển (nếu chưa bật)
+                if (watchId === null) {
+                    watchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            const latlng = [position.coords.latitude, position.coords.longitude];
+                            
+                            if (userMarker) {
+                                userMarker.setLatLng(latlng);
+                            } else {
+                                userMarker = L.marker(latlng, { 
+                                    icon: L.divIcon({ className: "custom-marker", html: `<div class="user-dot"></div>` }) 
+                                }).addTo(map);
+                            }
+                        },
+                        (err) => console.error("GPS Error:", err),
+                        { enableHighAccuracy: true, maximumAge: 1000 }
+                    );
+                }
+            } else {
+                alert("GPS not supported on this browser");
+            }
         };
-        
-        map.on('locationfound', (e) => {
-            if (userMarker) map.removeLayer(userMarker);
-            userMarker = L.marker(e.latlng, { icon: L.divIcon({ className: "custom-marker", html: `<div class="user-dot"></div>` }) }).addTo(map);
-        });
+
+        // Tự động bật tracking khi vừa vào app
+        window.onload = () => {
+            locateUser();
+        };
 
         // Start App
         renderMarkers(); 
