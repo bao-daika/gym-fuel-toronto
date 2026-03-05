@@ -60,6 +60,7 @@
             display: none; flex-direction: column;
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        @keyframes chatbot-pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
     </style>
 </head>
 <body>
@@ -125,7 +126,7 @@
     <script src="chatbot_ui.js"></script>
 
     <script>
-        // --- MAP & CORE LOGIC (GIỮ NGUYÊN SỰ HOÀN HẢO CỦA ANH) ---
+        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC CỦA ANH) ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
@@ -171,10 +172,11 @@
             const store = allStores.find(s => s.id === id);
             if (!store) return;
             const injector = document.getElementById('detail-content-injector');
+            // SỬA LỖI CÚ PHÁP: Template literal chuẩn cho Google Maps
             let commonHeader = `
                 <div class="flex justify-between items-center mb-6 sticky top-0 z-[2001] bg-[#0b0f1a]/95 py-2">
                     <button onclick="closeDetail()" class="flex items-center gap-2 text-blue-400 p-2 font-bold"><i data-lucide="arrow-left"></i> BACK</button>
-                    <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}')" class="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition tracking-widest uppercase">Directions</button>
+                    <button onclick="window.open('https://www.google.com/maps?q=${store.lat},${store.lng}')" class="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition tracking-widest uppercase">Directions</button>
                 </div>`;
             injector.innerHTML = commonHeader + (typeof store.render === 'function' ? store.render(store) : 'Detail not available');
             document.getElementById('detail-view').classList.remove('hidden');
@@ -212,7 +214,6 @@
             lucide.createIcons();
         };
 
-        // --- NEW: EXERCISE KNOWLEDGE LOGIC (FOLLOWING DIET LOGIC) ---
         window.renderExerciseKnowledge = function() {
             const injector = document.getElementById('detail-content-injector');
             const articles = (typeof exerciseArticles !== 'undefined' ? exerciseArticles : []);
@@ -306,12 +307,13 @@
         window.selectCategory = (l) => { 
             if (l === "Entertainments") { openEntertainments(); toggleMenu(); return; }
             if (l === "Diet Knowledge") { renderDietKnowledge(); toggleMenu(); return; }
-            if (l === "Exercises Knowledge") { renderExerciseKnowledge(); toggleMenu(); return; } // ADDED FOR MATCHING LOGIC
+            if (l === "Exercises Knowledge") { renderExerciseKnowledge(); toggleMenu(); return; }
             activeCategory = l; 
             document.getElementById('header-text').innerText = l; 
             renderMarkers(); renderSidebar(); toggleMenu(); 
         };
 
+        // Khởi tạo
         renderMarkers(); 
         renderSidebar(); 
         lucide.createIcons();
