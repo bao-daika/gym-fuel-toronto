@@ -28,7 +28,8 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ reply: botReply });
 
-    } catch (error) {
-        return res.status(500).json({ reply: "Tạ nặng quá Boss ơi, server đang bị đè. Thử lại sau nhé!" });
-    }
+    // Thay dòng này:
+} catch (error) {
+    return res.status(500).json({ reply: "Lỗi thật nè Boss: " + error.message });
+}
 }
