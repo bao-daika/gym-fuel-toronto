@@ -1,6 +1,6 @@
 {
   "name": "gym-fuel-toronto",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "type": "module",
   "dependencies": {
     "@google/generative-ai": "^0.2.1"
