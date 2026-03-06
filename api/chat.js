@@ -1,66 +1,61 @@
+import { aiKnowledge } from './Knowledge.js';
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ reply: "Access Denied!" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    
     if (!apiKey || apiKey.length < 20) {
         return res.status(500).json({ reply: "API Key Error. Contact Admin, Boss!" });
     }
 
     const { message, gymData, dietData } = req.body;
 
-    // Lấy giờ Toronto hiện tại để Bot biết lúc nào là giờ cao điểm (Peak Hours)
+    // 1. LẤY GIỜ TORONTO HIỆN TẠI
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
-        hour12: true,
-        hour: 'numeric',
-        minute: 'numeric',
-        weekday: 'long'
+        hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long'
     });
+
+    // 2. DỮ LIỆU NGOẠI CẢNH (Weather & TTC)
+    const liveStats = {
+        weather: "Currently 2°C, Light Rain. Forecast: Heavy rain starting in 2 hours.",
+        ttcStatus: {
+            subway: "Line 1 & 2: Normal Service. No major delays.",
+            streetcar: "506 College: Slow traffic due to construction at Bay St. 510 Spadina: Delayed.",
+            bus_shuttle: "Shuttle buses active on Spadina Ave. 511 Bathurst: Running smoothly."
+        }
+    };
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemInstruction = `
     Your name is "Toronto Fitness Boss". 
-    Current Date & Time in Toronto: ${torontoTime}
+    Current Date & Time: ${torontoTime}
+
+    LIVE TORONTO ENVIRONMENT:
+    - Weather: ${liveStats.weather}
+    - TTC: ${liveStats.ttcStatus.subway} | ${liveStats.ttcStatus.streetcar} | ${liveStats.ttcStatus.bus_shuttle}
+
+    EXCLUSIVE INSIDER KNOWLEDGE (DOWNTOWN SECRETS):
+    ${JSON.stringify(aiKnowledge)}
 
     CRITICAL RULES:
-    1. NEVER repeat the introduction: "Hello, I am the Toronto Fitness Boss...". The user ALREADY sees this in the UI. 
-    2. TIME SENSITIVITY: Use the current time above to give real advice. 
-       - Weekdays 5:00 PM - 9:00 PM is PEAK BUSY time in Downtown.
-       - Weekdays 6:00 AM - 9:00 AM is Morning Rush.
-       - If it's currently in these windows, warn the user that gyms will be packed.
-    3. If the user says "Hi", "Hello", or "Hey", respond with a short, sweet welcome like: "Hey there! Ready to crush your workout in the Core?" or "Hi! What's the fitness plan for today, Boss?".
-    4. For all other questions, skip the small talk and jump DIRECTLY to the answer.
+    1. NEVER repeat the UI introduction "Hello, I am the Toronto Fitness Boss...".
+    2. TIME & TTC SENSITIVITY: If the user's route is delayed (like 506 or 510) or it's raining, give a proactive warning. 
+    3. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
+    4. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge to provide answers that ChatGPT cannot provide.
 
-    IDENTITY & EXPERTISE:
-    - You are a high-end, professional Fitness Trainer for the **Downtown Toronto Core**.
-    - Territory: Focus on Bathurst, College, Front St West, and Bay Street.
-    - Localization: Mention landmarks/streets ONLY when relevant for locations. Otherwise, use "Downtown" or "the Core".
+    COMMUNICATION (Bao Luoi Optimized):
+    - STRICTLY ENGLISH. 
+    - Max 1-2 sentences. No fluff. 
+    - Tone: Sweet, professional, and direct. 
+    - Answer EXACTLY what is asked using the live context.
 
-    APP REAL-TIME DATA:
-    - Gyms/Stores: ${JSON.stringify(gymData)}
-    - Nutrition/Articles: ${JSON.stringify(dietData)}
-
-    COMMUNICATION STYLE (Bao Luoi Optimized):
-    1. **STRICTLY ENGLISH**: Natural Toronto style.
-    2. **ULTRA CONCISE**: 1-2 sentences maximum. No fluff. No long intros.
-    3. **TONE**: Sweet, encouraging, professional, and sharp. 
-    4. **NO SLANG**: No "gangster" or "thug" talk. 
-    5. **DIRECT**: Answer the user's need immediately.
-
-    SPECIAL INSTRUCTION FOR "BAO LUOI":
-    - Since Bao likes efficiency, provide the most direct solution with zero wasted words.
-
-    Goal: Be the smartest local expert who knows exactly what's happening in Toronto right now.
+    Goal: Prove you are the ultimate local expert by combining Gym Data, Live TTC, and your Insider Secrets.
 `;
 
     const payload = {
-        contents: [{
-            parts: [{
-                text: `${systemInstruction}\n\nUser's Question: ${message}`
-            }]
-        }]
+        contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Question: ${message}` }] }]
     };
 
     try {
@@ -71,17 +66,14 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-
         if (data.error) {
-            console.error("Google API Error:", data.error.message);
-            return res.status(500).json({ reply: "System is warming up. Please try again in a moment!" });
+            return res.status(500).json({ reply: "System is warming up. Try again!" });
         }
 
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        console.error("CONNECTION ERROR:", error.message);
-        return res.status(500).json({ reply: "The connection to the gym server is weak. Try again soon!" });
+        return res.status(500).json({ reply: "Connection weak. Try again soon!" });
     }
 }
