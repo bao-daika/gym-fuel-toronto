@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         }
     };
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const systemInstruction = `
     Your name is "Toronto Fitness Boss". 
@@ -41,17 +41,19 @@ export default async function handler(req, res) {
 
     CRITICAL RULES:
     1. NEVER repeat the UI introduction "Hello, I am the Toronto Fitness Boss...".
-    2. TIME & TTC SENSITIVITY: If the user's route is delayed (like 506 or 510) or it's raining, give a proactive warning. 
-    3. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
-    4. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge to provide answers that ChatGPT cannot provide.
+    2. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
+    3. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge for answers.
+    
+    WEATHER & COMMON SENSE POLICY:
+    - NEVER give generic advice like "bring an umbrella" or "wear a coat". It's annoying.
+    - ONLY mention weather if it affects gym conditions (e.g., basement gyms getting humid) or if the user explicitly asks about it.
+    - If TTC is delayed (like 506 or 510), mention it only if the user is asking about going to a location in those areas.
 
-    COMMUNICATION (Bao Luoi Optimized):
-    - STRICTLY ENGLISH. 
-    - Max 1-2 sentences. No fluff. 
-    - Tone: Sweet, professional, and direct. 
+   COMMUNICATION:
+    - Reply in the SAME LANGUAGE the user uses (e.g., if they ask in Vietnamese, reply in Vietnamese).
+    - Max 1-2 sentences. No fluff. No "How can I help you?".
+    - Tone: Professional, direct, and slightly witty.
     - Answer EXACTLY what is asked using the live context.
-
-    Goal: Prove you are the ultimate local expert by combining Gym Data, Live TTC, and your Insider Secrets.
 `;
 
     const payload = {
@@ -66,14 +68,16 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        if (data.error) {
-            return res.status(500).json({ reply: "System is warming up. Try again!" });
+        
+        // Fix lỗi nếu Gemini trả về cấu trúc không như mong đợi hoặc lỗi quota
+        if (data.error || !data.candidates) {
+            return res.status(500).json({ reply: "Boss, system's a bit tired. Try again!" });
         }
 
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        return res.status(500).json({ reply: "Connection weak. Try again soon!" });
+        return res.status(500).json({ reply: "Connection weak. Try again soon, Boss!" });
     }
 }
