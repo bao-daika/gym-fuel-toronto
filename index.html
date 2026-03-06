@@ -152,8 +152,8 @@
         }
         const db = firebase.database();
 
-        // --- 2. CHAT & DATA COLLECTION ---
-        function handleSendMessage() {
+        // --- 2. CHAT & DATA COLLECTION (ĐÃ ĐƯỢC FIX LỖI TREO) ---
+        async function handleSendMessage() {
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
             if(!msg) return;
@@ -161,19 +161,36 @@
             appendMessage('user', msg);
             input.value = '';
 
-            const response = (typeof getBotResponse === 'function') ? getBotResponse(msg) : "I am listening...";
+            // Hiển thị trạng thái "Thinking..." tạm thời nếu muốn
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'bg-white/5 p-3 rounded-2xl max-w-[80%] text-gray-400 italic text-[10px] animate-pulse';
+            thinkingDiv.innerText = "Boss is thinking...";
+            thinkingDiv.id = "thinking-temp";
+            document.getElementById('chat-messages').appendChild(thinkingDiv);
 
-            setTimeout(() => {
+            try {
+                // Đợi kết quả từ Vercel qua chatbot_brain.js
+                const response = await chatbotBrain.processInput(msg);
+                
+                // Xóa dòng thinking và hiện câu trả lời thật
+                const temp = document.getElementById('thinking-temp');
+                if(temp) temp.remove();
+
                 appendMessage('bot', response);
                 
-                // Ghi data vào Firebase với ID duy nhất (push)
+                // Ghi data vào Firebase (Chạy ngầm không bắt Boss đợi)
                 db.ref('market_insights').push().set({
                     question: msg,
                     answer: response,
-                    timestamp: new Date().toLocaleString(),
+                    timestamp: new Date().toISOString(),
                     area: "Downtown Toronto"
                 });
-            }, 600);
+            } catch (err) {
+                const temp = document.getElementById('thinking-temp');
+                if(temp) temp.remove();
+                appendMessage('bot', "Connection error, Boss! Check the logs.");
+                console.error(err);
+            }
         }
 
         function appendMessage(role, text) {
