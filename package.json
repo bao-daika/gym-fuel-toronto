@@ -1,8 +1,19 @@
 {
   "name": "gym-fuel-toronto",
   "version": "1.0.2",
+  "description": "Gym Fuel Toronto - Downtown Supplement & Fitness Guide",
   "type": "module",
+  "main": "api/chat.js",
+  "scripts": {
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
+  },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0" 
-  }
+    "@google/generative-ai": "^0.21.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  },
+  "author": "Bao Luoi",
+  "license": "MIT"
 }

@@ -19,31 +19,14 @@ window.sendMessage = async () => {
     const loadingId = "loading-" + Date.now();
     addChatMessageUI("Checking the territory...", false, loadingId);
 
-    // 3. Call Vercel API (Connected to Gemini AI)
+    // 3. Call Brain Logic
     try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: text,
-                // Gửi dữ liệu thực tế để AI làm "Boss" thông minh hơn
-                gymData: (typeof gymStores !== 'undefined') ? gymStores : [],
-                dietData: (typeof dietArticles !== 'undefined') ? dietArticles : []
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('API Jammed');
-        }
-
-        const data = await response.json();
+        const reply = await chatbotBrain.processInput(text);
         
-        // 4. Update the "Thinking" message with the AI response from Gemini
+        // 4. Update the "Thinking" message with the AI response
         const loadingElement = document.getElementById(loadingId);
         if (loadingElement) {
-            loadingElement.innerText = data.reply || "No word from the streets. Try again, Boss!";
+            loadingElement.innerText = reply;
         }
 
     } catch (error) {
