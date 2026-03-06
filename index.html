@@ -43,7 +43,7 @@
         .left-arm span { transform: scaleX(-1); display: inline-block; }
         .game-tag { color: #475569; font-weight: 900; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: center; flex: 1; }
 
-        /* --- CHATBOT UI --- */
+        /* --- CHATBOT UI (SCALED 1.5X) --- */
         #chatbot-bubble {
             position: absolute; bottom: 25px; right: 25px; z-index: 3000;
             width: 65px; height: 65px; border-radius: 50%;
@@ -56,7 +56,8 @@
         }
         #chatbot-panel {
             position: absolute; bottom: 100px; right: 25px; z-index: 3001;
-            width: 320px; height: 450px; 
+            /* Đã nâng lên 1.5 lần so với cũ (320x450 -> 480x675) */
+            width: 480px; height: 675px; 
             display: none; flex-direction: column;
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -103,14 +104,14 @@
                 </div>
                 <button onclick="toggleChat()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm scrollbar-hide">
-    <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-blue-100 italic">
-        Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you?
-    </div>
-</div>
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-base scrollbar-hide">
+                <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-blue-100 italic">
+                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you?
+                </div>
+            </div>
             <div class="p-3 bg-black/20 border-t border-white/5 flex gap-2">
-                <input id="chat-input" type="text" placeholder="Ask about Downtown..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50">
-                <button onclick="sendMessage()" class="bg-blue-600 p-2 rounded-xl text-white active:scale-90 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
+                <input id="chat-input" type="text" placeholder="Ask me anything..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500/50">
+                <button onclick="sendMessage()" class="bg-blue-600 px-4 rounded-xl text-white active:scale-90 transition"><i data-lucide="send" class="w-5 h-5"></i></button>
             </div>
         </div>
     </div>
@@ -126,7 +127,7 @@
     <script src="chatbot_ui.js"></script>
 
     <script>
-        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC CỦA ANH) ---
+        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC CỦA ĐẠI CA) ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
@@ -172,11 +173,10 @@
             const store = allStores.find(s => s.id === id);
             if (!store) return;
             const injector = document.getElementById('detail-content-injector');
-            // SỬA LỖI CÚ PHÁP: Template literal chuẩn cho Google Maps
             let commonHeader = `
                 <div class="flex justify-between items-center mb-6 sticky top-0 z-[2001] bg-[#0b0f1a]/95 py-2">
                     <button onclick="closeDetail()" class="flex items-center gap-2 text-blue-400 p-2 font-bold"><i data-lucide="arrow-left"></i> BACK</button>
-                    <button onclick="window.open('https://www.google.com/maps?q=${store.lat},${store.lng}')" class="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition tracking-widest uppercase">Directions</button>
+                    <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}')" class="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition tracking-widest uppercase">Directions</button>
                 </div>`;
             injector.innerHTML = commonHeader + (typeof store.render === 'function' ? store.render(store) : 'Detail not available');
             document.getElementById('detail-view').classList.remove('hidden');
