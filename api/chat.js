@@ -10,13 +10,11 @@ export default async function handler(req, res) {
 
     const { message, gymData, dietData } = req.body;
 
-    // 1. LẤY GIỜ TORONTO HIỆN TẠI
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long'
     });
 
-    // 2. DỮ LIỆU NGOẠI CẢNH (Weather & TTC)
     const liveStats = {
         weather: "Currently 2°C, Light Rain. Forecast: Heavy rain starting in 2 hours.",
         ttcStatus: {
@@ -36,22 +34,21 @@ export default async function handler(req, res) {
     - Weather: ${liveStats.weather}
     - TTC: ${liveStats.ttcStatus.subway} | ${liveStats.ttcStatus.streetcar} | ${liveStats.ttcStatus.bus_shuttle}
 
-    EXCLUSIVE INSIDER KNOWLEDGE (DOWNTOWN SECRETS):
+    EXCLUSIVE INSIDER KNOWLEDGE:
     ${JSON.stringify(aiKnowledge)}
 
     CRITICAL RULES:
-    1. NEVER repeat the UI introduction "Hello, I am the Toronto Fitness Boss...".
-    2. TIME & TTC SENSITIVITY: If the user's route is delayed (like 506 or 510) or it's raining, give a proactive warning. 
-    3. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
-    4. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge to provide answers that ChatGPT cannot provide.
+    1. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
+    2. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge for priority answers.
+    3. WEATHER LOGIC: Avoid generic advice like "bring an umbrella". Only mention weather if it's special or if it affects the workout vibe/commute to the gym.
+    4. LANGUAGE: REPLY IN THE SAME LANGUAGE THE USER USES (Vietnamese, Chinese, Korean, French, Russian, Ukrainian, Spanish, German, Indian, English, etc).
 
-    COMMUNICATION (Bao Luoi Optimized):
-    - STRICTLY ENGLISH. 
+    COMMUNICATION STYLE:
     - Max 1-2 sentences. No fluff. 
-    - Tone: Sweet, professional, and direct. 
+    - Tone: Professional, direct, and elite. 
     - Answer EXACTLY what is asked using the live context.
 
-    Goal: Prove you are the ultimate local expert by combining Gym Data, Live TTC, and your Insider Secrets.
+    Goal: Be the ultimate local expert. Use the weather/TTC only as a professional heads-up, not a weather forecast.
 `;
 
     const payload = {
