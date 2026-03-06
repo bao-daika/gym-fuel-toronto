@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gym Fuel Toronto | Manager Version</title>
+    <title>Gym Fuel Toronto</title>
     
     <link rel="icon" type="image/png" href="GymFuelTorontoPhoenix.png">
     <link rel="apple-touch-icon" href="GymFuelTorontoPhoenix.png">
@@ -135,9 +135,9 @@
     <script src="chatbot_ui.js"></script>
 
     <script>
-        // --- FIREBASE CONFIG (DÁN BỘ CHÌA KHÓA CỦA ANH VÀO ĐÂY) ---
+        // --- 1. FIREBASE INITIALIZATION ---
         const firebaseConfig = {
-          apiKey: "AIzaSyBJkuHPNv4w_SUALiXH7D811yx1a4fQSe8",
+          apiKey: "AIzaSyBJkuHPNv4w_SUALiXH7D81lyX1a4fQSe8",
           authDomain: "gymfueltoronto-49bd2.firebaseapp.com",
           databaseURL: "https://gymfueltoronto-49bd2-default-rtdb.firebaseio.com",
           projectId: "gymfueltoronto-49bd2",
@@ -146,27 +146,28 @@
           appId: "1:552974717701:web:44542b78858e0c61b1d6c",
           measurementId: "G-SC993S1PK8"
         };
-        firebase.initializeApp(firebaseConfig);
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
 
-        // --- CHAT LOGIC WITH DATA COLLECTION ---
+        // --- 2. CHAT & DATA COLLECTION ---
         function handleSendMessage() {
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
             if(!msg) return;
 
-            // Hiển thị tin người dùng
             appendMessage('user', msg);
             input.value = '';
 
-            // Lấy câu trả lời từ chatbot_brain
             const response = (typeof getBotResponse === 'function') ? getBotResponse(msg) : "I am listening...";
 
             setTimeout(() => {
                 appendMessage('bot', response);
                 
-                // BẮN DATA VỀ KHO CHO ĐẠI CA SOI
-                db.ref('market_insights/' + Date.now()).set({
+                // Ghi data vào Firebase với ID duy nhất (push)
+                db.ref('market_insights').push().set({
                     question: msg,
                     answer: response,
                     timestamp: new Date().toLocaleString(),
@@ -189,7 +190,7 @@
             p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% NHƯ CŨ) ---
+        // --- 3. MAP & CORE ENGINE ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
@@ -375,7 +376,7 @@
             renderMarkers(); renderSidebar(); toggleMenu(); 
         };
 
-        // Khởi tạo
+        // --- KHỞI TẠO HỆ THỐNG ---
         renderMarkers(); 
         renderSidebar(); 
         lucide.createIcons();
