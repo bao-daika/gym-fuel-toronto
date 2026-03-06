@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gym Fuel Toronto | Manager Version</title>
+    
+    <link rel="icon" type="image/png" href="GymFuelTorontoPhoenix.png">
+    <link rel="apple-touch-icon" href="GymFuelTorontoPhoenix.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -43,7 +47,7 @@
         .left-arm span { transform: scaleX(-1); display: inline-block; }
         .game-tag { color: #475569; font-weight: 900; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: center; flex: 1; }
 
-        /* --- CHATBOT UI (Đã tăng nhẹ size cho đại ca) --- */
+        /* --- CHATBOT UI --- */
         #chatbot-bubble {
             position: absolute; bottom: 25px; right: 25px; z-index: 3000;
             width: 65px; height: 65px; border-radius: 50%;
@@ -56,7 +60,7 @@
         }
         #chatbot-panel {
             position: absolute; bottom: 100px; right: 25px; z-index: 3001;
-            width: 350px; height: 520px; /* Tăng rộng và cao một tí xíu */
+            width: 350px; height: 520px;
             display: none; flex-direction: column;
             max-width: 90vw; max-height: 80vh;
         }
@@ -96,7 +100,9 @@
         <div id="chatbot-panel" class="glass rounded-3xl overflow-hidden shadow-2xl border border-blue-500/20 flex flex-col pointer-events-auto">
             <div class="bg-blue-600 p-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center"><i data-lucide="crown" class="text-white w-5 h-5"></i></div>
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                        <img src="GymFuelTorontoPhoenix.png" class="w-6 h-6 object-contain">
+                    </div>
                     <div>
                         <div class="text-xs font-black text-white leading-none tracking-tighter">TORONTO FITNESS BOSS</div>
                         <div class="text-[10px] text-blue-200 mt-1 uppercase font-bold">Downtown Core | Online</div>
@@ -106,7 +112,7 @@
             </div>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm scrollbar-hide">
                 <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-blue-100 italic">
-                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you?
+                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you? I speak any languages !
                 </div>
             </div>
             <div class="p-3 bg-black/20 border-t border-white/5 flex gap-2">
@@ -122,12 +128,11 @@
     <script src="data_diet.js"></script> 
     <script src="motivation.js"></script> 
     <script src="game.js"></script>
-    
     <script src="chatbot_brain.js"></script>
     <script src="chatbot_ui.js"></script>
 
     <script>
-        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC) ---
+        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC NHƯ YÊU CẦU) ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
