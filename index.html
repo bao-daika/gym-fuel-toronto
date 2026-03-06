@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gym Fuel Toronto</title>
+    <title>Gym Fuel Toronto | Manager Version</title>
     
     <link rel="icon" type="image/png" href="GymFuelTorontoPhoenix.png">
     <link rel="apple-touch-icon" href="GymFuelTorontoPhoenix.png">
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -115,12 +112,12 @@
             </div>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm scrollbar-hide">
                 <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-blue-100 italic">
-                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you? I speak all languages!
+                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you? I speak all languages !
                 </div>
             </div>
             <div class="p-3 bg-black/20 border-t border-white/5 flex gap-2">
                 <input id="chat-input" type="text" placeholder="Ask me anything ..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50">
-                <button onclick="handleSendMessage()" class="bg-blue-600 p-2 rounded-xl text-white active:scale-90 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
+                <button onclick="sendMessage()" class="bg-blue-600 p-2 rounded-xl text-white active:scale-90 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
             </div>
         </div>
     </div>
@@ -135,79 +132,7 @@
     <script src="chatbot_ui.js"></script>
 
     <script>
-        // --- 1. FIREBASE INITIALIZATION ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyBJkuHPNv4w_SUALiXH7D81lyX1a4fQSe8",
-          authDomain: "gymfueltoronto-49bd2.firebaseapp.com",
-          databaseURL: "https://gymfueltoronto-49bd2-default-rtdb.firebaseio.com",
-          projectId: "gymfueltoronto-49bd2",
-          storageBucket: "gymfueltoronto-49bd2.firebasestorage.app",
-          messagingSenderId: "552974717701",
-          appId: "1:552974717701:web:44542b78858e0c61b1d6c",
-          measurementId: "G-SC993S1PK8"
-        };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.database();
-
-        // --- 2. CHAT & DATA COLLECTION (ĐÃ ĐƯỢC FIX LỖI TREO) ---
-        async function handleSendMessage() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if(!msg) return;
-
-            appendMessage('user', msg);
-            input.value = '';
-
-            // Hiển thị trạng thái "Thinking..." tạm thời nếu muốn
-            const thinkingDiv = document.createElement('div');
-            thinkingDiv.className = 'bg-white/5 p-3 rounded-2xl max-w-[80%] text-gray-400 italic text-[10px] animate-pulse';
-            thinkingDiv.innerText = "Boss is thinking...";
-            thinkingDiv.id = "thinking-temp";
-            document.getElementById('chat-messages').appendChild(thinkingDiv);
-
-            try {
-                // Đợi kết quả từ Vercel qua chatbot_brain.js
-                const response = await chatbotBrain.processInput(msg);
-                
-                // Xóa dòng thinking và hiện câu trả lời thật
-                const temp = document.getElementById('thinking-temp');
-                if(temp) temp.remove();
-
-                appendMessage('bot', response);
-                
-                // Ghi data vào Firebase (Chạy ngầm không bắt Boss đợi)
-                db.ref('market_insights').push().set({
-                    question: msg,
-                    answer: response,
-                    timestamp: new Date().toISOString(),
-                    area: "Downtown Toronto"
-                });
-            } catch (err) {
-                const temp = document.getElementById('thinking-temp');
-                if(temp) temp.remove();
-                appendMessage('bot', "Connection error, Boss! Check the logs.");
-                console.error(err);
-            }
-        }
-
-        function appendMessage(role, text) {
-            const container = document.getElementById('chat-messages');
-            const div = document.createElement('div');
-            div.className = role === 'user' ? 'bg-blue-600 ml-auto p-3 rounded-2xl max-w-[80%] text-white' : 'bg-white/10 p-3 rounded-2xl max-w-[80%] text-gray-200';
-            div.innerText = text;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function toggleChat() {
-            const p = document.getElementById('chatbot-panel');
-            p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
-        }
-
-        // --- 3. MAP & CORE ENGINE ---
+        // --- MAP & CORE LOGIC (GIỮ NGUYÊN 100% LOGIC NHƯ YÊU CẦU) ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
@@ -393,7 +318,7 @@
             renderMarkers(); renderSidebar(); toggleMenu(); 
         };
 
-        // --- KHỞI TẠO HỆ THỐNG ---
+        // Khởi tạo
         renderMarkers(); 
         renderSidebar(); 
         lucide.createIcons();
