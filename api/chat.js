@@ -10,21 +10,23 @@ export default async function handler(req, res) {
 
     const { message, gymData, dietData } = req.body;
 
+    // 1. LẤY GIỜ TORONTO HIỆN TẠI
     const torontoTime = new Date().toLocaleString("en-US", {
         timeZone: "America/Toronto",
         hour12: true, hour: 'numeric', minute: 'numeric', weekday: 'long'
     });
 
+    // 2. DỮ LIỆU NGOẠI CẢNH (Weather & TTC)
     const liveStats = {
         weather: "Currently 2°C, Light Rain. Forecast: Heavy rain starting in 2 hours.",
         ttcStatus: {
-            subway: "Line 1 & 2: Normal Service.",
-            streetcar: "506 College: Slow traffic (Bay St construction). 510 Spadina: Delayed.",
+            subway: "Line 1 & 2: Normal Service. No major delays.",
+            streetcar: "506 College: Slow traffic due to construction at Bay St. 510 Spadina: Delayed.",
             bus_shuttle: "Shuttle buses active on Spadina Ave. 511 Bathurst: Running smoothly."
         }
     };
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${apiKey}`;
 
     const systemInstruction = `
     Your name is "Toronto Fitness Boss". 
@@ -34,16 +36,23 @@ export default async function handler(req, res) {
     - Weather: ${liveStats.weather}
     - TTC: ${liveStats.ttcStatus.subway} | ${liveStats.ttcStatus.streetcar} | ${liveStats.ttcStatus.bus_shuttle}
 
-    EXCLUSIVE INSIDER KNOWLEDGE:
+    EXCLUSIVE INSIDER KNOWLEDGE (DOWNTOWN SECRETS):
     ${JSON.stringify(aiKnowledge)}
 
     CRITICAL RULES:
-    1. IDENTITY: High-end trainer for Downtown Toronto (Bathurst, College, Front St West, Bay Street).
-    2. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge first.
-    3. WEATHER POLICY: NEVER give common sense advice (umbrellas, coats, etc). ONLY mention weather if it directly impacts gym conditions or if explicitly asked.
-    4. TTC POLICY: Only mention delays if relevant to the user's gym location or if they ask.
-    5. LANGUAGE: Reply in the SAME LANGUAGE the user uses.
-    6. STYLE: Max 1-2 sentences. Direct, professional, and slightly witty. No fluff. No "How can I help you".
+    1. NEVER repeat the UI introduction "Hello, I am the Toronto Fitness Boss...".
+    2. TIME & TTC SENSITIVITY: If the user's route is delayed (like 506 or 510), mention it only if relevant to their gym location.
+    3. EXPERT IDENTITY: You are a high-end trainer for Downtown Core (Bathurst, College, Front St West, Bay Street).
+    4. DATA PRIORITY: Use App Data (${JSON.stringify(gymData)}) and Insider Knowledge to provide answers.
+    5. WEATHER POLICY: NEVER give common sense advice (umbrellas, coats). Only mention weather if asked or if it directly impacts gym conditions.
+
+    COMMUNICATION:
+    - REPLY IN THE SAME LANGUAGE AS THE USER.
+    - Max 1-2 sentences. No fluff. 
+    - Tone: Sweet, professional, and direct. 
+    - Answer EXACTLY what is asked using the live context.
+
+    Goal: Prove you are the ultimate local expert by combining Gym Data, Live TTC, and your Insider Secrets.
 `;
 
     const payload = {
@@ -58,16 +67,14 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        
-        if (data.error || !data.candidates || !data.candidates[0].content) {
-            console.error("Gemini API Error:", data.error);
-            return res.status(500).json({ reply: "Boss, system's a bit tired. Try again!" });
+        if (data.error) {
+            return res.status(500).json({ reply: "System is warming up. Try again!" });
         }
 
         const aiReply = data.candidates[0].content.parts[0].text;
         return res.status(200).json({ reply: aiReply });
 
     } catch (error) {
-        return res.status(500).json({ reply: "Connection weak. Try again soon, Boss!" });
+        return res.status(500).json({ reply: "Connection weak. Try again soon!" });
     }
 }
