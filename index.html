@@ -53,25 +53,32 @@
         /* --- CHATBOT UI --- */
         #chatbot-bubble {
             position: absolute; bottom: 25px; right: 25px; z-index: 3000;
-            width: 65px; height: 65px; border-radius: 50%;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            width: 100px; height: 100px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 3px solid rgba(255,255,255,0.2);
-            animation: chatbot-pulse 3s infinite;
         }
+        #chatbot-bubble:active { transform: scale(0.9); }
+        
         #chatbot-panel {
-            position: absolute; bottom: 100px; right: 25px; z-index: 3001;
-            width: 350px; height: 520px;
-            display: none; flex-direction: column;
-            max-width: 90vw; max-height: 80vh;
+            position: absolute; 
+            bottom: 130px; 
+            right: 25px; 
+            z-index: 3001;
+            width: 350px; 
+            height: 480px; 
+            display: none; 
+            flex-direction: column;
+            max-width: 90vw; 
+            max-height: 70vh;
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        @keyframes chatbot-pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
     </style>
 </head>
 <body>
+
+    <audio id="doge-bark-sound" preload="auto">
+        <source src="dog-woof.mp3" type="audio/mpeg">
+    </audio>
 
     <div class="relative h-full w-full">
         <div class="absolute top-0 left-0 right-0 z-[1000] p-4 flex justify-between items-center pointer-events-none">
@@ -96,28 +103,21 @@
         <div id="map"></div>
 
         <div id="chatbot-bubble" onclick="toggleChat()" class="pointer-events-auto">
-            <i data-lucide="message-circle" class="text-white w-8 h-8"></i>
-            <div class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#0b0f1a]"></div>
+            <img src="doge_cute.gif" alt="Doge Boss" class="w-full h-full object-contain">
         </div>
 
         <div id="chatbot-panel" class="glass rounded-3xl overflow-hidden shadow-2xl border border-blue-500/20 flex flex-col pointer-events-auto">
-            <div class="bg-blue-600 p-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-                        <img src="GymFuelTorontoPhoenix.png" class="w-6 h-6 object-contain">
-                    </div>
-                    <div>
-                        <div class="text-xs font-black text-white leading-none tracking-tighter">TORONTO FITNESS BOSS</div>
-                        <div class="text-[10px] text-blue-200 mt-1 uppercase font-bold">Downtown Core | Online</div>
-                    </div>
-                </div>
-                <button onclick="toggleChat()" class="text-white/50 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="bg-blue-600/90 px-4 py-3 flex items-center justify-between border-b border-white/10">
+                <div class="text-[12px] font-black text-white tracking-[0.2em] uppercase italic">TORONTO GAINZ DOGE</div>
+                <button onclick="toggleChat()" class="text-white/50 hover:text-white p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
             </div>
+            
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm scrollbar-hide">
                 <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-3 text-blue-100 italic">
-                    Hello, I am the Toronto Fitness Boss! I'm smarter than ChatGPT and Gemini about Fitness in Downtown Toronto. How can I help you? I speak all languages!
+                    Hello, I am the Toronto Gainz Doge! I speak all human languages. Much muscle, very wow! How can I help?
                 </div>
             </div>
+
             <div class="p-3 bg-black/20 border-t border-white/5 flex gap-2">
                 <input id="chat-input" type="text" placeholder="Ask me anything ..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50">
                 <button onclick="handleSendMessage()" class="bg-blue-600 p-2 rounded-xl text-white active:scale-90 transition"><i data-lucide="send" class="w-4 h-4"></i></button>
@@ -152,7 +152,7 @@
         }
         const db = firebase.database();
 
-        // --- 2. CHAT & DATA COLLECTION (ĐÃ ĐƯỢC FIX LỖI TREO) ---
+        // --- 2. CHAT & DATA COLLECTION ---
         async function handleSendMessage() {
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
@@ -161,24 +161,18 @@
             appendMessage('user', msg);
             input.value = '';
 
-            // Hiển thị trạng thái "Thinking..." tạm thời nếu muốn
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = 'bg-white/5 p-3 rounded-2xl max-w-[80%] text-gray-400 italic text-[10px] animate-pulse';
-            thinkingDiv.innerText = "Boss is thinking...";
+            thinkingDiv.innerText = "Doge is thinking...";
             thinkingDiv.id = "thinking-temp";
             document.getElementById('chat-messages').appendChild(thinkingDiv);
 
             try {
-                // Đợi kết quả từ Vercel qua chatbot_brain.js
                 const response = await chatbotBrain.processInput(msg);
-                
-                // Xóa dòng thinking và hiện câu trả lời thật
                 const temp = document.getElementById('thinking-temp');
                 if(temp) temp.remove();
-
                 appendMessage('bot', response);
                 
-                // Ghi data vào Firebase (Chạy ngầm không bắt Boss đợi)
                 db.ref('market_insights').push().set({
                     question: msg,
                     answer: response,
@@ -202,12 +196,23 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        // --- UPDATED TOGGLE CHAT WITH BARK LOGIC ---
         function toggleChat() {
             const p = document.getElementById('chatbot-panel');
-            p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+            const isOpening = (p.style.display !== 'flex');
+            
+            if (isOpening) {
+                const bark = document.getElementById('doge-bark-sound');
+                if (bark) {
+                    bark.currentTime = 0;
+                    bark.play().catch(e => console.log("Audio play blocked by browser."));
+                }
+            }
+            
+            p.style.display = isOpening ? 'flex' : 'none';
         }
 
-        // --- 3. MAP & CORE ENGINE ---
+        // --- 3. MAP & CORE ENGINE (NO CHANGES TO LOGIC) ---
         const allStores = [...(typeof foodStores !== 'undefined' ? foodStores : []), 
                           ...(typeof gymStores !== 'undefined' ? gymStores : [])];
 
@@ -393,7 +398,6 @@
             renderMarkers(); renderSidebar(); toggleMenu(); 
         };
 
-        // --- KHỞI TẠO HỆ THỐNG ---
         renderMarkers(); 
         renderSidebar(); 
         lucide.createIcons();
