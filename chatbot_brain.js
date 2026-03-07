@@ -1,9 +1,21 @@
 // --- CHATBOT BRAIN: LOGIC & API COMMUNICATION ---
 const chatbotBrain = {
     /**
+     * Tạo hoặc lấy Device ID duy nhất từ localStorage để khớp với logic chống troll của Backend
+     */
+    getDeviceId() {
+        let id = localStorage.getItem('gym_fuel_device_id');
+        if (!id) {
+            id = 'doge_' + Math.random().toString(36).substr(2, 9) + Date.now();
+            localStorage.setItem('gym_fuel_device_id', id);
+        }
+        return id;
+    },
+
+    /**
      * Gửi tin nhắn của người dùng lên Vercel Serverless Function
      * @param {string} input - Tin nhắn từ khung chat
-     * @returns {string} - Câu trả lời từ AI Gemini
+     * @returns {string} - Câu trả lời từ AI Gemini 3.1 Flash Lite
      */
     async processInput(input) {
         try {
@@ -15,10 +27,12 @@ const chatbotBrain = {
                 },
                 body: JSON.stringify({
                     message: input,
-                    // Bốc dữ liệu thực tế từ danh sách Gym và Dinh dưỡng của App
-                    // Nếu các biến này chưa được load, gửi mảng trống để tránh lỗi
                     gymData: (typeof gymStores !== 'undefined') ? gymStores : [],
-                    dietData: (typeof dietArticles !== 'undefined') ? dietArticles : []
+                    dietData: (typeof dietArticles !== 'undefined') ? dietArticles : [],
+                    // Gửi ID gym đang xem để AI biết đang hỏi gym nào
+                    currentGymId: window.activeGymId || null,
+                    // QUAN TRỌNG: Gửi deviceId để Backend thực hiện logic chống troll (Anti-Waste-Man)
+                    deviceId: this.getDeviceId()
                 })
             });
 
@@ -26,7 +40,7 @@ const chatbotBrain = {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 console.error("Server Side Error:", errorData);
-                throw new Error(errorData.error || "Network response was not ok");
+                throw new Error(errorData.reply || "Network response was not ok");
             }
 
             const data = await response.json();
@@ -38,7 +52,6 @@ const chatbotBrain = {
             console.error("Brain Connection Error:", error);
             
             // Thông báo lỗi thân thiện cho dân Toronto
-            // Nếu lỗi do API Key chưa ăn, nó sẽ rơi vào đây
             return "My circuits are jammed at the moment. Even a Boss needs a break! Try again in a minute.";
         }
     }

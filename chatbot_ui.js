@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('chat-input');
     if (input) {
         input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') window.sendMessage();
+            if (e.key === 'Enter') window.handleSendMessage();
         });
     }
 });
